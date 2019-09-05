@@ -1,0 +1,54 @@
+{
+  "manifest_version": 1,
+  "version": 1,
+  "type": "APP",
+  "desktop": {
+    "js": [
+      "https://js.cybozu.com/jquery/3.3.1/jquery.min.js",
+      "https://js.cybozu.com/dompurify/1.0.11/purify.min.js",
+      "https://js.cybozu.com/markedjs/v0.5.1/marked.min.js",
+      "js/kintone-ui-component.min.js",
+      "js/desktop.js"
+    ],
+    "css": [
+      "css/kintone-ui-component.min.css",
+      "css/51-modern-default.css",
+      "css/desktop.css",
+      "css/github-markdown.css"
+    ]
+  },
+  "icon": "image/icon.png",
+  "config": {
+    "html": "html/config.html",
+    "js": [
+      "https://js.cybozu.com/jquery/3.3.1/jquery.min.js",
+      "js/kintone-ui-component.min.js",
+      "js/config.js"
+    ],
+    "css": [
+      "css/51-modern-default.css",
+      "css/config.css",
+      "css/github-markdown.css"
+    ]
+  },
+  "name": {
+    "en": "markdown-dev"
+  },
+  "description": {
+    "en": "markdown-dev"
+  },
+  "mobile": {
+    "js": [
+      "https://js.cybozu.com/jquery/3.3.1/jquery.min.js",
+      "https://js.cybozu.com/dompurify/1.0.11/purify.min.js",
+      "https://js.cybozu.com/markedjs/v0.5.1/marked.min.js",
+      "js/kintone-ui-component.min.js",
+      "js/mobile.js"
+    ],
+    "css": [
+      "css/kintone-ui-component.min.css",
+      "css/mobile.css",
+      "css/github-markdown.css"
+    ]
+  }
+}
