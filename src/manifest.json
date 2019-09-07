@@ -27,6 +27,7 @@
     ],
     "css": [
       "css/51-modern-default.css",
+      "css/kintone-ui-component.min.css",
       "css/config.css",
       "css/github-markdown.css"
     ]
