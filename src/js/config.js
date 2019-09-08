@@ -10,21 +10,8 @@ jQuery.noConflict();
     multiLineFieldCodeArray: [],
     spaceIdArray: []
   };
+  let table;
   
-  //labelがフィールドコード、valueは文字列
-  // pluginConfig = {
-  //   colorScheme0: "",
-  //   editorLabel0: "editor",
-  //   editorValue0: "起案／議題一覧（公開）",
-  //   fileLink0: "-----",
-  //   preview0: "-----",
-  //   colorScheme1: "#111111",
-  //   editorLabel1: "文字列__複数行_",
-  //   editorValue1: "相談（公開）1",
-  //   fileLink1: "-----",
-  //   preview1: "space2"
-  // };
-
   //configの情報を配列に整形
   const createTableDataArrayFromConfig = () => {
     const tmpArray = [];
@@ -62,32 +49,6 @@ jQuery.noConflict();
     const button = new kintoneUIComponent.Button({ text, type });
     return button;
   };
-
-  //table要素の生成
-  const createTableElement = () => {
-    const table =  new kintoneUIComponent.Table({
-      data: [],
-      columns: [
-        {
-          header: 'Markdownエディタ*',
-          cell: () => { return kintoneUIComponent.createTableCell('dropdown', 'editor')}
-        },
-        {
-          header: 'プレビューボタンの表示*',
-          cell: () => { return kintoneUIComponent.createTableCell('dropdown', 'preview')}  
-        },
-        {
-          header: 'ファイルのリンク表示',
-          cell: () => { return kintoneUIComponent.createTableCell('dropdown', 'fileLink')}
-        },
-        {
-          header: '見出しタグの色*',
-          cell: () => { return kintoneUIComponent.createTableCell('text', 'colorScheme')}
-        }
-      ]
-    });
-    return table;
-  }
 
   //tableの元となる行の作成
   const createBaseTableData = () => {
@@ -129,8 +90,8 @@ jQuery.noConflict();
 
     return originTableData;
   }
-  //tableにconfig情報から値をセット
-  const setTableValue = (table) => {
+  //table要素の生成
+  const createTableElement = () => {
     let tmpTableDataArray = [];
 
     kintone.api(kintone.api.url('/k/v1/form', true), 'GET', {'app': appId}, (resp) => {
@@ -149,6 +110,12 @@ jQuery.noConflict();
       });
 
       const tableDataArray = createTableDataArrayFromConfig();
+      let defaultRowData = createBaseTableData();
+      defaultRowData.colorScheme.value = '';
+      defaultRowData.editor.value = '-----';
+      defaultRowData.fileLink.value = '-----';
+      defaultRowData.preview.value = '-----';
+
       if (tableDataArray.length === 0) {
         const originTableData = createBaseTableData();
         originTableData.colorScheme.value = '';
@@ -166,9 +133,34 @@ jQuery.noConflict();
           tmpTableDataArray.push(originTableData);
         }
       }
-      table.setValue(tmpTableDataArray);
+
+      table =  new kintoneUIComponent.Table({
+        data: tmpTableDataArray,
+        defaultRowData: defaultRowData,
+        columns: [
+          {
+            header: 'Markdownエディタ*',
+            cell: () => { return kintoneUIComponent.createTableCell('dropdown', 'editor')}
+          },
+          {
+            header: 'プレビューボタンの表示*',
+            cell: () => { return kintoneUIComponent.createTableCell('dropdown', 'preview')}  
+          },
+          {
+            header: 'ファイルのリンク表示',
+            cell: () => { return kintoneUIComponent.createTableCell('dropdown', 'fileLink')}
+          },
+          {
+            header: '見出しタグの色*',
+            cell: () => { return kintoneUIComponent.createTableCell('text', 'colorScheme')}
+          }
+        ]
+      });
+      const configElement = document.getElementById('setting');
+      configElement.appendChild(table.render());
     });
   };
+
   //save buttonを押した時にtable情報をsave
   const saveTableData = () => {
     const tableValues = table.getValue();
@@ -209,7 +201,7 @@ jQuery.noConflict();
     }
   };
 
-  //重複、空欄がないかをcheck
+  //空欄がないかをcheck
   const checkTableDataIsEmpty = (tableValue, index) => {
     let alertText = '';
     if (tableValue.editor.value === '-----') {
@@ -221,6 +213,7 @@ jQuery.noConflict();
     return alertText;
   };
 
+  //重複がないかをcheck
   const checkTableDataIsDuplicated = (editorValueArray, fileLinkValueArray, previewValueArray) => {
     let alertDuplicatedText = '';
 
@@ -244,13 +237,11 @@ jQuery.noConflict();
     return alertDuplicatedText;
   };
   
-  const configElement = document.getElementById('setting');
-  const buttonElement = document.getElementById('button');
-  const table = createTableElement();
+  createTableElement();
+
   const saveButton = createUIButton('Submit','submit');
   const cancelButton = createUIButton('Cancel','normal');
-  setTableValue(table);
-  configElement.appendChild(table.render());
+  const buttonElement = document.getElementById('button');
   buttonElement.appendChild(saveButton.render());
   buttonElement.appendChild(cancelButton.render());
 
@@ -263,5 +254,5 @@ jQuery.noConflict();
     console.log('cancel');
     history.back();
   });
-  
+
 })(jQuery, kintone.$PLUGIN_ID);
