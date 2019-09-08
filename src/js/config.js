@@ -10,20 +10,20 @@ jQuery.noConflict();
     multiLineFieldCodeArray: [],
     spaceIdArray: []
   };
-
+  
   //labelがフィールドコード、valueは文字列
-  pluginConfig = {
-    colorScheme0: "",
-    editorLabel0: "editor",
-    editorValue0: "起案／議題一覧（公開）",
-    fileLink0: "-----",
-    preview0: "-----",
-    colorScheme1: "#111111",
-    editorLabel1: "文字列__複数行_",
-    editorValue1: "相談（公開）1",
-    fileLink1: "-----",
-    preview1: "space2"
-  };
+  // pluginConfig = {
+  //   colorScheme0: "",
+  //   editorLabel0: "editor",
+  //   editorValue0: "起案／議題一覧（公開）",
+  //   fileLink0: "-----",
+  //   preview0: "-----",
+  //   colorScheme1: "#111111",
+  //   editorLabel1: "文字列__複数行_",
+  //   editorValue1: "相談（公開）1",
+  //   fileLink1: "-----",
+  //   preview1: "space2"
+  // };
 
   //configの情報を配列に整形
   const createTableDataArrayFromConfig = () => {
@@ -174,10 +174,20 @@ jQuery.noConflict();
     const tableValues = table.getValue();
     const setConfig = {};
     let alertTexts = '';
-    //console.log(tableValues);
+
+    let colorSchemeValueArray = [];
+    let editorValueArray = [];
+    let fileLinkValueArray = [];
+    let previewValueArray = [];
+
     tableValues.forEach((tableValue, index) => {
-      const alertText = checkTableData(tableValue, index);
-      alertTexts += `${alertText}`;
+      const alertEmptyText = checkTableDataIsEmpty(tableValue, index);
+      alertTexts += `${alertEmptyText}`;
+
+      colorSchemeValueArray.push(tableValue.colorScheme.value);
+      editorValueArray.push(tableValue.editor.value);
+      fileLinkValueArray.push(tableValue.fileLink.value);
+      previewValueArray.push(tableValue.preview.value);
 
       setConfig[`colorScheme${index}`] = tableValue.colorScheme.value;
       setConfig[`editorLabel${index}`] = tableValue.editor.value;
@@ -190,23 +200,48 @@ jQuery.noConflict();
       });
     });
 
-    if (alertTexts === '') {
+    const alertDuplicatedTexts = checkTableDataIsDuplicated(editorValueArray, fileLinkValueArray, previewValueArray);
+    
+    if (alertTexts === '' && alertDuplicatedTexts === '') {
       kintone.plugin.app.setConfig(setConfig);
     } else {
-      alert(`${alertTexts}が未入力です。`);
+      alert(`${alertTexts}が未入力です。\n${alertDuplicatedTexts}`);
     }
   };
 
   //重複、空欄がないかをcheck
-  const checkTableData = (tableValue, index) => {
+  const checkTableDataIsEmpty = (tableValue, index) => {
     let alertText = '';
     if (tableValue.editor.value === '-----') {
-      alertText += `${index}番目のMarkdownエディタ,`;
+      alertText += `${index + 1}番目のMarkdownエディタ,`;
     }
     if (tableValue.preview.value === '-----') {
-      alertText += `${index}番目のプレビューボタンの表示,`;
+      alertText += `${index + 1}番目のプレビューボタンの表示,`;
     }
     return alertText;
+  };
+
+  const checkTableDataIsDuplicated = (editorValueArray, fileLinkValueArray, previewValueArray) => {
+    let alertDuplicatedText = '';
+
+    const filteringEditorValueArray = editorValueArray.filter((editorValue, index, self) => {
+      return self.indexOf(editorValue) !== self.lastIndexOf(editorValue);
+    });
+    const spaceIdValueArray = fileLinkValueArray.concat(previewValueArray);
+    const filteringSpaceIdArray = spaceIdValueArray.filter((spaceIdValue, index, self) => {
+      if (spaceIdValue !== '-----') {
+        return self.indexOf(spaceIdValue) !== self.lastIndexOf(spaceIdValue);
+      }
+    });
+
+    if (filteringEditorValueArray.length !== 0) {
+      alertDuplicatedText += `Markdownエディタの値が重複しています。\n`;
+    }
+    if (filteringSpaceIdArray.length !== 0) {
+      alertDuplicatedText += `プレビューボタンの表示,ファイルのリンク表示の値が重複しています。\n`;
+    }
+
+    return alertDuplicatedText;
   };
   
   const configElement = document.getElementById('setting');
@@ -228,4 +263,5 @@ jQuery.noConflict();
     console.log('cancel');
     history.back();
   });
+  
 })(jQuery, kintone.$PLUGIN_ID);
