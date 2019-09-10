@@ -20,7 +20,8 @@ jQuery.noConflict();
       editorValue: '',
       editorLabel: '',
       fileLink: '',
-      preview: ''
+      previewButton: '',
+      mobilePreview: ''
     }
     let tableDataNumber = 0;
     if (Object.keys(pluginConfig).length === 0){
@@ -38,7 +39,8 @@ jQuery.noConflict();
       tmpObject.editorValue = pluginConfig[`editorValue${index}`];
       tmpObject.editorLabel = pluginConfig[`editorLabel${index}`];
       tmpObject.fileLink = pluginConfig[`fileLink${index}`];
-      tmpObject.preview = pluginConfig[`preview${index}`];
+      tmpObject.previewButton = pluginConfig[`previewButton${index}`];
+      tmpObject.mobilePreview = pluginConfig[`mobilePreview${index}`];
       tmpArray.push(tmpObject);
     }
     return tmpArray;
@@ -56,7 +58,10 @@ jQuery.noConflict();
       editor: {
         items: []
       },
-      preview: {
+      previewButton: {
+        items: []
+      },
+      mobilePreview: {
         items: []
       },
       fileLink: {
@@ -70,21 +75,23 @@ jQuery.noConflict();
       value: '-----'
     };
     originTableData.editor.items.push(noSelectedItem);
-    originTableData.preview.items.push(noSelectedItem);
+    originTableData.previewButton.items.push(noSelectedItem);
+    originTableData.mobilePreview.items.push(noSelectedItem);
     originTableData.fileLink.items.push(noSelectedItem);
-
+    //文字列複数行の一覧を表示
     kintoneFieldData.multiLineTextArray.forEach((multiLineText, index) => {
       const editorItem = {};
       editorItem.label = kintoneFieldData.multiLineFieldCodeArray[index];
       editorItem.value = multiLineText;
       originTableData.editor.items.push(editorItem);
     });
-
+    //spaceIdの一覧を表示
     kintoneFieldData.spaceIdArray.forEach(spaceId => {
       const spaceIdItem = {};
       spaceIdItem.label = spaceId;
       spaceIdItem.value = spaceId;
-      originTableData.preview.items.push(spaceIdItem);
+      originTableData.previewButton.items.push(spaceIdItem);
+      originTableData.mobilePreview.items.push(spaceIdItem);
       originTableData.fileLink.items.push(spaceIdItem);
     });
 
@@ -110,18 +117,21 @@ jQuery.noConflict();
       });
 
       const tableDataArray = createTableDataArrayFromConfig();
+      //+ボタン押した時のデフォルトで選択されている値を設定
       let defaultRowData = createBaseTableData();
       defaultRowData.colorScheme.value = '';
       defaultRowData.editor.value = '-----';
       defaultRowData.fileLink.value = '-----';
-      defaultRowData.preview.value = '-----';
-
+      defaultRowData.previewButton.value = '-----';
+      defaultRowData.mobilePreview.value = '-----';
+      
       if (tableDataArray.length === 0) {
         const originTableData = createBaseTableData();
         originTableData.colorScheme.value = '';
         originTableData.editor.value = '-----';
         originTableData.fileLink.value = '-----';
-        originTableData.preview.value = '-----';
+        originTableData.previewButton.value = '-----';
+        originTableData.mobilePreview.value = '-----';
         tmpTableDataArray.push(originTableData);
       } else {
         for (let index = 0; index < tableDataArray.length; index++) {
@@ -129,7 +139,8 @@ jQuery.noConflict();
           originTableData.colorScheme.value = tableDataArray[index].colorScheme;
           originTableData.editor.value = tableDataArray[index].editorLabel;
           originTableData.fileLink.value = tableDataArray[index].fileLink;
-          originTableData.preview.value = tableDataArray[index].preview;
+          originTableData.previewButton.value = tableDataArray[index].previewButton;
+          originTableData.mobilePreview.value = tableDataArray[index].mobilePreview;
           tmpTableDataArray.push(originTableData);
         }
       }
@@ -144,7 +155,11 @@ jQuery.noConflict();
           },
           {
             header: 'プレビューボタンの表示*',
-            cell: () => { return kintoneUIComponent.createTableCell('dropdown', 'preview')}  
+            cell: () => { return kintoneUIComponent.createTableCell('dropdown', 'previewButton')}  
+          },
+          {
+            header: 'モバイル版プレビューの表示*',
+            cell: () => { return kintoneUIComponent.createTableCell('dropdown', 'mobilePreview')}
           },
           {
             header: 'ファイルのリンク表示',
@@ -170,7 +185,8 @@ jQuery.noConflict();
     let colorSchemeValueArray = [];
     let editorValueArray = [];
     let fileLinkValueArray = [];
-    let previewValueArray = [];
+    let previewButtonValueArray = [];
+    let mobilePreviewValueArray = [];
 
     tableValues.forEach((tableValue, index) => {
       const alertEmptyText = checkTableDataIsEmpty(tableValue, index);
@@ -179,20 +195,21 @@ jQuery.noConflict();
       colorSchemeValueArray.push(tableValue.colorScheme.value);
       editorValueArray.push(tableValue.editor.value);
       fileLinkValueArray.push(tableValue.fileLink.value);
-      previewValueArray.push(tableValue.preview.value);
+      previewButtonValueArray.push(tableValue.previewButton.value);
+      mobilePreviewValueArray.push(tableValue.mobilePreview.value);
 
       setConfig[`colorScheme${index}`] = tableValue.colorScheme.value;
       setConfig[`editorLabel${index}`] = tableValue.editor.value;
       setConfig[`fileLink${index}`] = tableValue.fileLink.value;
-      setConfig[`preview${index}`] = tableValue.preview.value;
+      setConfig[`previewButton${index}`] = tableValue.previewButton.value;
+      setConfig[`mobilePreview${index}`] = tableValue.mobilePreview.value;
       tableValue.editor.items.forEach((editor) => {
         if (editor.value === tableValue.editor.value) {
           setConfig[`editorValue${index}`] = editor.label;
         }
       });
     });
-
-    const alertDuplicatedTexts = checkTableDataIsDuplicated(editorValueArray, fileLinkValueArray, previewValueArray);
+    const alertDuplicatedTexts = checkTableDataIsDuplicated(editorValueArray, fileLinkValueArray, previewButtonValueArray, mobilePreviewValueArray);
     
     if (alertTexts === '' && alertDuplicatedTexts === '') {
       kintone.plugin.app.setConfig(setConfig);
@@ -207,20 +224,23 @@ jQuery.noConflict();
     if (tableValue.editor.value === '-----') {
       alertText += `${index + 1}番目のMarkdownエディタ,`;
     }
-    if (tableValue.preview.value === '-----') {
+    if (tableValue.previewButton.value === '-----') {
       alertText += `${index + 1}番目のプレビューボタンの表示,`;
+    }
+    if (tableValue.mobilePreview.value === '-----') {
+      alertText += `${index + 1}番目のモバイル版プレビューの表示,`;
     }
     return alertText;
   };
 
   //重複がないかをcheck
-  const checkTableDataIsDuplicated = (editorValueArray, fileLinkValueArray, previewValueArray) => {
+  const checkTableDataIsDuplicated = (editorValueArray, fileLinkValueArray, previewButtonValueArray, mobilePreviewValueArray) => {
     let alertDuplicatedText = '';
 
     const filteringEditorValueArray = editorValueArray.filter((editorValue, index, self) => {
       return self.indexOf(editorValue) !== self.lastIndexOf(editorValue);
     });
-    const spaceIdValueArray = fileLinkValueArray.concat(previewValueArray);
+    const spaceIdValueArray = fileLinkValueArray.concat(previewButtonValueArray, mobilePreviewValueArray);
     const filteringSpaceIdArray = spaceIdValueArray.filter((spaceIdValue, index, self) => {
       if (spaceIdValue !== '-----') {
         return self.indexOf(spaceIdValue) !== self.lastIndexOf(spaceIdValue);
@@ -231,7 +251,7 @@ jQuery.noConflict();
       alertDuplicatedText += `Markdownエディタの値が重複しています。\n`;
     }
     if (filteringSpaceIdArray.length !== 0) {
-      alertDuplicatedText += `プレビューボタンの表示,ファイルのリンク表示の値が重複しています。\n`;
+      alertDuplicatedText += `プレビューボタンの表示,ファイルのリンク表示,モバイル版プレビューのいずれかの値が重複しています。\n`;
     }
 
     return alertDuplicatedText;
