@@ -43,45 +43,84 @@ jQuery.noConflict();
     return button;
   };
 
-  kintone.events.on('app.record.detail.show', event => {
+  const createUIDialog = () => {
+    const dialog = new kintoneUIComponent.Dialog({
+      header: 'Preview',
+      content: '',
+      footer: '',
+      isVisible: false,
+      showCloseButton: true
+    });
+    return dialog;
+  }
 
-    const tableDataArray = createTableDataArrayFromConfig();
-    console.log(tableDataArray);
-    console.log(event);
+  const hideMobileView = (tableData) => {
+    const mobilePreviewElement = kintone.app.record.getSpaceElement(tableData.mobilePreview);
+    mobilePreviewElement.parentNode.parentNode.style.display = 'none';
+  };
+
+  const hidePreviewButton = (tableData) => {
+    const previewButtonElement = kintone.app.record.getSpaceElement(tableData.previewButton);
+    previewButtonElement.parentNode.style.display = 'none';
+  };
+
+  const changeCSSValue = (element, colorScheme) => {
+    const tagNameArray = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+      tagNameArray.forEach(tagName => {
+        const editorChildrenTagArray = element.getElementsByTagName(tagName);
+        for (let index = 0; index < editorChildrenTagArray.length; index++) {
+          editorChildrenTagArray[index].style.color = colorScheme;
+        }
+      });
+  };
+
+  const tableDataArray = createTableDataArrayFromConfig();
+
+  kintone.events.on('app.record.detail.show', event => {
 
     tableDataArray.forEach(tableData => {
       //1: mobilePreviewのSpaceIDの削除
       //2: buttonのSpaceIDの削除      
-      const mobilePreviewElement = kintone.app.record.getSpaceElement(tableData.mobilePreview);
-      const previewButtonElement = kintone.app.record.getSpaceElement(tableData.previewButton);
-      mobilePreviewElement.parentNode.parentNode.style.display = 'none';
-      previewButtonElement.parentNode.style.display = 'none';
+      hideMobileView(tableData);
+      hidePreviewButton(tableData);
 
       //3: editorのフィールドコードからマークダウン形式に変換
       const editorValue = event['record'][tableData.editorLabel]['value'];
       const editorElement = kintone.app.record.getFieldElement(tableData.editorLabel);
-      console.log(editorElement);
       editorElement.innerHTML = DOMPurify.sanitize(marked(editorValue));
       editorElement.classList.add('markdown-body');
-
       //4: color codeの設定
-      const tagNameArray = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
-      tagNameArray.forEach(tagName => {
-        const editorChildrenTagArray = editorElement.getElementsByTagName(tagName);
-        for (let index = 0; index < editorChildrenTagArray.length; index++) {
-          editorChildrenTagArray[index].style.color = tableData.colorScheme;
-        }
-      });
-
+      changeCSSValue(editorElement, tableData.colorScheme)
     });
   
     return event;
   });
 
   kintone.events.on(['app.record.create.show', 'app.record.edit.show'], (event) => {
-    console.log(event);
+
+    tableDataArray.forEach(tableData => {
+      //1: mobilePreviewのSpaceIDの削除
+      hideMobileView(tableData);
+      //2: buttonの設置 
+      const previewButton = createUIButton('preview', 'normal');
+      const preViewDialog = createUIDialog();
+      const previewDiv = document.createElement('div');
+      previewDiv.classList.add('markdown-body');
+      
+      previewButton.on('click', clickEvent => {
+        //3: buttonを押した時のpopupの出現
+        const editorValue = kintone.app.record.get().record[tableData.editorLabel].value;  
+        previewDiv.innerHTML = DOMPurify.sanitize(marked(editorValue));
+        preViewDialog.setContent(previewDiv);
+        changeCSSValue(previewDiv, tableData.colorScheme)
+        preViewDialog.show();
+      });
+
+      const previewButtonElement = kintone.app.record.getSpaceElement(tableData.previewButton);
+      previewButtonElement.appendChild(previewButton.render());
+      previewButtonElement.appendChild(preViewDialog.render());
+    });
     return event;
   });
-
 
 })(jQuery, kintone.$PLUGIN_ID);
