@@ -4,7 +4,7 @@ jQuery.noConflict();
   'use strict';
 
   const appId = kintone.app.getId();
-  let pluginConfig = kintone.plugin.app.getConfig(PLUGIN_ID);
+  const pluginConfig = kintone.plugin.app.getConfig(PLUGIN_ID);
   const kintoneFieldData = {
     multiLineTextArray: [],
     multiLineFieldCodeArray: [],
