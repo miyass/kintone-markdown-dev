@@ -217,7 +217,7 @@ jQuery.noConflict();
       alert(`${alertTexts}が未入力です。\n${alertDuplicatedTexts}`);
     }
   };
-
+  
   //空欄がないかをcheck
   const checkTableDataIsEmpty = (tableValue, index) => {
     let alertText = '';
