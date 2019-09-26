@@ -10,7 +10,16 @@ jQuery.noConflict();
     multiLineFieldCodeArray: [],
     spaceIdArray: []
   };
-  let table;
+
+  const tableHeader = {
+    editorHeader: 'Markdownエディタ',
+    previewButtonHeader: 'プレビューボタンの表示',
+    mobilePreviewHeader: 'モバイル版プレビューの表示',
+    fileLinkHeader: 'ファイルのリンク表示',
+    colorSchemeHeader: '見出しタグの色'
+  };
+
+  let tableComponent, notifyPopupComponent;
   
   //configの情報を配列に整形
   const createTableDataArrayFromConfig = () => {
@@ -96,7 +105,29 @@ jQuery.noConflict();
     });
 
     return originTableData;
-  }
+  };
+
+  const createExplanationElement = () => {
+    const explanationElement = document.getElementById('explanation');
+    const explanationField = document.createElement('div');
+    const singleTextExplanationField = new kintoneUIComponent.Label({ text: `${tableHeader.editorHeader}は文字列（複数行）フィールドを指定します。` });
+    const spaceIdExplanationField = new kintoneUIComponent.Label({ text: `${tableHeader.previewButtonHeader},${tableHeader.mobilePreviewHeader},${tableHeader.fileLinkHeader}はスペースフィールドを指定します。` });
+    const colorSchemeExplanationField = new kintoneUIComponent.Label({ text: `${tableHeader.colorSchemeHeader}は#と16進数を記入します。（例 #3498db）` });
+
+    explanationElement.style.marginTop = '30px';
+
+    explanationElement.appendChild(explanationField);
+    explanationField.appendChild(singleTextExplanationField.render());
+    explanationField.appendChild(spaceIdExplanationField.render());
+    explanationField.appendChild(colorSchemeExplanationField.render());
+  };
+
+  const createNotifyPopupElement = () => {
+    const popupElement = document.getElementById('popup');
+    notifyPopupComponent = new kintoneUIComponent.NotifyPopup({ text: '', type: 'error', isVisible: false });
+    popupElement.appendChild(notifyPopupComponent.render());
+  };
+
   //table要素の生成
   const createTableElement = () => {
     let tmpTableDataArray = [];
@@ -145,49 +176,44 @@ jQuery.noConflict();
         }
       }
 
-      table =  new kintoneUIComponent.Table({
+      tableComponent =  new kintoneUIComponent.Table({
         data: tmpTableDataArray,
         defaultRowData: defaultRowData,
         columns: [
           {
-            header: 'Markdownエディタ*',
+            header: `${tableHeader.editorHeader}*`,
             cell: () => { return kintoneUIComponent.createTableCell('dropdown', 'editor')}
           },
           {
-            header: 'プレビューボタンの表示*',
+            header: `${tableHeader.previewButtonHeader}*`,
             cell: () => { return kintoneUIComponent.createTableCell('dropdown', 'previewButton')}  
           },
           {
-            header: 'モバイル版プレビューの表示*',
+            header: `${tableHeader.mobilePreviewHeader}*`,
             cell: () => { return kintoneUIComponent.createTableCell('dropdown', 'mobilePreview')}
           },
           {
-            header: 'ファイルのリンク表示',
+            header: `${tableHeader.fileLinkHeader}`,
             cell: () => { return kintoneUIComponent.createTableCell('dropdown', 'fileLink')}
           },
           {
-            header: '見出しタグの色*',
+            header: `${tableHeader.colorSchemeHeader}*`,
             cell: () => { return kintoneUIComponent.createTableCell('text', 'colorScheme')}
           }
         ]
       });
       const configElement = document.getElementById('setting');
-      configElement.appendChild(table.render());
+      configElement.appendChild(tableComponent.render());
     });
   };
 
   //save buttonを押した時にtable情報をsave
   const saveTableData = () => {
-    const tableValues = table.getValue();
+    const tableValues = tableComponent.getValue();
     const setConfig = {};
     let alertTexts = '';
-
-    let colorSchemeValueArray = [];
-    let editorValueArray = [];
-    let fileLinkValueArray = [];
-    let previewButtonValueArray = [];
-    let mobilePreviewValueArray = [];
-
+    let [colorSchemeValueArray, editorValueArray, fileLinkValueArray, previewButtonValueArray, mobilePreviewValueArray] = [[], [], [], [], []];
+    
     tableValues.forEach((tableValue, index) => {
       const alertEmptyText = checkTableDataIsEmpty(tableValue, index);
       alertTexts += `${alertEmptyText}`;
@@ -214,7 +240,8 @@ jQuery.noConflict();
     if (alertTexts === '' && alertDuplicatedTexts === '') {
       kintone.plugin.app.setConfig(setConfig);
     } else {
-      alert(`${alertTexts}が未入力です。\n${alertDuplicatedTexts}`);
+      notifyPopupComponent.setText(`${alertTexts}が未入力です。\n${alertDuplicatedTexts}`);
+      notifyPopupComponent.show();
     }
   };
   
@@ -258,6 +285,8 @@ jQuery.noConflict();
   };
   
   createTableElement();
+  createExplanationElement();
+  createNotifyPopupElement();
 
   const saveButton = createUIButton('Submit','submit');
   const cancelButton = createUIButton('Cancel','normal');
